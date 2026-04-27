@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="bn" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Management Pro | Abdur Razzak Dakhil Madrasah</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📑</text></svg>">
+
+    <!-- CDNs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Hind Siliguri', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        body { font-family: 'Hind Siliguri', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .dark .glass { background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.05); }
+        
+        .scrollbar-hide::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-hide::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-hide::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .scrollbar-hide::-webkit-scrollbar-thumb { background: #475569; }
+
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Status Badges */
+        .badge-pending { background: #fee2e2; color: #b91c1c; }
+        .badge-typed { background: #e0e7ff; color: #4338ca; }
+        .badge-printed { background: #dcfce7; color: #15803d; }
+        
+        .dark .badge-pending { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .dark .badge-typed { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+        .dark .badge-printed { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-200 h-screen flex overflow-hidden selection:bg-primary-500 selection:text-white">
+
+    <!-- Sidebar -->
+    <aside class="w-72 bg-white dark:bg-darkCard flex flex-col hidden md:flex shadow-2xl z-20 transition-colors border-r border-gray-100 dark:border-gray-800 relative">
+        <!-- Decoration -->
+        <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-primary-600 to-primary-900 rounded-br-[4rem] -z-10"></div>
+        
+        <div class="p-6 pt-8">
+            <h2 class="text-2xl font-bold text-white leading-tight drop-shadow-md">আবদুর রাজ্জাক<br>দাখিল মাদ্রাসা</h2>
+            <p class="text-primary-100 text-sm mt-1 font-medium"><i class="fas fa-calendar-alt mr-1"></i> ১ম সাময়িক পরীক্ষা - ২০২৬</p>
+        </div>
+        
+        <div class="px-6 py-4 flex-1 overflow-y-auto scrollbar-hide mt-4">
+            <!-- Profile -->
+            <div class="flex items-center space-x-4 mb-8 glass p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <img src="https://ui-avatars.com/api/?name=Raisul+Islam&background=0d9488&color=fff&rounded=true&bold=true" alt="Profile" class="w-12 h-12 shadow-md">
+                <div>
+                    <p class="font-bold text-base dark:text-white">রাইসুল ইসলাম সাঈদ</p>
+                    <p class="text-xs text-primary-600 dark:text-primary-400 font-semibold">সহকারী শিক্ষক</p>
+                </div>
+            </div>
+            
+            <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 ml-2">মেন্যু</p>
+            <nav class="space-y-2">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 p-3.5 rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-900 dark:text-primary-100 font-semibold transition-all">
+                    <i class="fas fa-chart-pie w-5 text-center text-lg"></i><span>ড্যাশবোর্ড অ্যানালিটিক্স</span>
+                </button>
+                <button onclick="switchTab('tasks')" id="nav-tasks" class="w-full flex items-center space-x-3 p-3.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 font-semibold transition-all">
+                    <i class="fas fa-list-check w-5 text-center text-lg"></i><span>প্রশ্নপত্র পরিচালনা</span>
+                </button>
+                <button onclick="switchTab('history')" id="nav-history" class="w-full flex items-center space-x-3 p-3.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 font-semibold transition-all">
+                    <i class="fas fa-history w-5 text-center text-lg"></i><span>অ্যাক্টিভিটি লগ</span>
+                </button>
+                <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center space-x-3 p-3.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 font-semibold transition-all">
+                    <i class="fas fa-cog w-5 text-center text-lg"></i><span>সেটিংস ও ব্যাকআপ</span>
+                </button>
+            </nav>
+        </div>
+        <div class="p-5 text-xs text-center text-gray-400 border-t border-gray-100 dark:border-gray-800 font-medium">
+            Next-Gen Portal v2.0
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="bg-white/80 dark:bg-darkCard/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 p-4 px-6 flex justify-between items-center z-30 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button onclick="document.getElementById('mobileSidebar').classList.toggle('-translate-x-full')" class="md:hidden text-2xl text-gray-600 dark:text-gray-300">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-blue-600 dark:from-primary-400 dark:to-blue-400">প্রশ্ন ট্র্যাকার প্রো</h1>
+                    <p class="text-xs text-gray-500 dark:text-gray-400" id="currentDateDisplay">লোড হচ্ছে...</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="relative hidden sm:block">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="globalSearch" placeholder="বিষয় বা ক্লাস খুঁজুন..." class="pl-10 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-none focus:ring-2 focus:ring-primary-500 text-sm w-64 transition-all outline-none dark:text-white" onkeyup="handleGlobalSearch(this.value)">
+                </div>
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:scale-110 transition-transform">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Mobile Sidebar (Overlay) -->
+        <div id="mobileSidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-darkCard shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 md:hidden flex flex-col">
+            <div class="p-5 flex justify-between items-center border-b dark:border-gray-800">
+                <h2 class="font-bold text-lg dark:text-white">মেন্যু</h2>
+                <button onclick="document.getElementById('mobileSidebar').classList.add('-translate-x-full')" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <nav class="p-4 space-y-2 flex-1">
+                <button onclick="switchTab('dashboard'); document.getElementById('mobileSidebar').classList.add('-translate-x-full')" class="w-full text-left p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold dark:text-white"><i class="fas fa-chart-pie w-6"></i> ড্যাশবোর্ড</button>
+                <button onclick="switchTab('tasks'); document.getElementById('mobileSidebar').classList.add('-translate-x-full')" class="w-full text-left p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold dark:text-white"><i class="fas fa-list-check w-6"></i> প্রশ্নপত্র পরিচালনা</button>
+                <button onclick="switchTab('history'); document.getElementById('mobileSidebar').classList.add('-translate-x-full')" class="w-full text-left p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold dark:text-white"><i class="fas fa-history w-6"></i> অ্যাক্টিভিটি লগ</button>
+                <button onclick="switchTab('settings'); document.getElementById('mobileSidebar').classList.add('-translate-x-full')" class="w-full text-left p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold dark:text-white"><i class="fas fa-cog w-6"></i> সেটিংস</button>
+            </nav>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide" id="main-scroll-area">
+            
+            <!-- ================= VIEW: DASHBOARD ================= -->
+            <div id="view-dashboard" class="space-y-6 fade-in block">
+                
+                <!-- Welcome Banner -->
+                <div class="bg-gradient-to-r from-primary-600 to-blue-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+                    <div class="z-10 text-center md:text-left mb-4 md:mb-0">
+                        <h2 class="text-2xl md:text-3xl font-bold mb-1">আসসালামু আলাইকুম, সাঈদ স্যার! 👋</h2>
+                        <p class="text-primary-100 opacity-90 text-sm md:text-base">আপনার আজকের কাজের অগ্রগতি চমৎকার। চলুন বাকি কাজগুলো শেষ করি!</p>
+                    </div>
+                    <div class="z-10 text-center bg-black/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/10">
+                        <p class="text-xs uppercase tracking-wider text-primary-200 mb-1">প্রিন্ট সম্পন্ন</p>
+                        <h3 class="text-3xl font-bold" id="banner-percentage">০%</h3>
+                    </div>
+                </div>
+
+                <!-- KPI Cards (6 Cards Layout) -->
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <!-- 1. Total -->
+                    <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs xl:text-sm text-gray-500 dark:text-gray-400 font-semibold">সর্বমোট বিষয়</p>
+                                <h3 class="text-2xl xl:text-3xl font-bold text-gray-800 dark:text-white mt-1" id="stat-total">০</h3>
+                            </div>
+                            <div class="w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm xl:text-xl"><i class="fas fa-layer-group"></i></div>
+                        </div>
+                    </div>
+                    <!-- 2. Pending -->
+                    <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs xl:text-sm text-gray-500 dark:text-gray-400 font-semibold">বাকি আছে</p>
+                                <h3 class="text-2xl xl:text-3xl font-bold text-red-500 mt-1" id="stat-pending">০</h3>
+                            </div>
+                            <div class="w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm xl:text-xl"><i class="fas fa-hourglass-half"></i></div>
+                        </div>
+                    </div>
+                    <!-- 3. Total Typed -->
+                    <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs xl:text-sm text-gray-500 dark:text-gray-400 font-semibold">মোট টাইপ হয়েছে</p>
+                                <h3 class="text-2xl xl:text-3xl font-bold text-indigo-500 mt-1" id="stat-total-typed">০</h3>
+                            </div>
+                            <div class="w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center text-sm xl:text-xl"><i class="fas fa-keyboard"></i></div>
+                        </div>
+                    </div>
+                    <!-- 4. Total Printed -->
+                    <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs xl:text-sm text-gray-500 dark:text-gray-400 font-semibold">মোট প্রিন্ট সম্পন্ন</p>
+                                <h3 class="text-2xl xl:text-3xl font-bold text-green-500 mt-1" id="stat-total-printed">০</h3>
+                            </div>
+                            <div class="w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-sm xl:text-xl"><i class="fas fa-print"></i></div>
+                        </div>
+                    </div>
+                    <!-- 5. Today Typed -->
+                    <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-cyan-100 bg-cyan-50/50 dark:bg-cyan-900/10">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs xl:text-sm text-cyan-600 dark:text-cyan-400 font-semibold">আজকে টাইপ</p>
+                                <h3 class="text-2xl xl:text-3xl font-bold text-cyan-600 mt-1" id="stat-today-typed">০</h3>
+                            </div>
+                            <div class="w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center text-sm xl:text-xl"><i class="fas fa-calendar-day"></i></div>
+                        </div>
+                    </div>
+                    <!-- 6. Today Printed -->
+                    <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-emerald-100 bg-emerald-50/50 dark:bg-emerald-900/10">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs xl:text-sm text-emerald-600 dark:text-emerald-400 font-semibold">আজকে প্রিন্ট</p>
+                                <h3 class="text-2xl xl:text-3xl font-bold text-emerald-600 mt-1" id="stat-today-printed">০</h3>
+                            </div>
+                            <div class="w-8 h-8 xl:w-10 xl:h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm xl:text-xl"><i class="fas fa-check-double"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Donut Chart -->
+                    <div class="glass dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-1 flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">ওভারঅল স্ট্যাটাস</h3>
+                        <div class="flex-1 relative min-h-[250px] flex items-center justify-center">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Bar Chart -->
+                    <div class="glass dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-2 flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">শ্রেণিভিত্তিক প্রিন্ট অগ্রগতি</h3>
+                        <div class="flex-1 relative min-h-[250px] w-full">
+                            <canvas id="classChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW: TASKS ================= -->
+            <div id="view-tasks" class="space-y-6 hidden fade-in">
+                
+                <!-- Controls -->
+                <div class="glass dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row justify-between items-center gap-4 sticky top-0 z-10">
+                    <div class="flex gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 scrollbar-hide">
+                        <button onclick="filterTasks('all')" id="btn-filter-all" class="px-5 py-2 rounded-full text-sm font-bold transition-all bg-primary-500 text-white shadow-md whitespace-nowrap">সব বিষয়</button>
+                        <button onclick="filterTasks('pending')" id="btn-filter-pending" class="px-5 py-2 rounded-full text-sm font-bold transition-all bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 whitespace-nowrap">বাকি আছে</button>
+                        <button onclick="filterTasks('typed')" id="btn-filter-typed" class="px-5 py-2 rounded-full text-sm font-bold transition-all bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 whitespace-nowrap">শুধু টাইপড</button>
+                        <button onclick="filterTasks('printed')" id="btn-filter-printed" class="px-5 py-2 rounded-full text-sm font-bold transition-all bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 whitespace-nowrap">প্রিন্টেড</button>
+                    </div>
+                    
+                    <div class="w-full lg:w-1/3">
+                        <select id="classFilter" onchange="renderTasks()" class="w-full p-2.5 rounded-xl bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-semibold cursor-pointer">
+                            <option value="all">সব ক্লাস একসাথে দেখুন</option>
+                            <!-- Options injected by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Task Container -->
+                <div id="tasks-container" class="space-y-8">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- ================= VIEW: HISTORY ================= -->
+            <div id="view-history" class="space-y-6 hidden fade-in">
+                <div class="glass dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-history text-primary-500"></i> অ্যাক্টিভিটি লগ (হিস্ট্রি)
+                    </h2>
+                    
+                    <div class="relative border-l-2 border-gray-200 dark:border-gray-700 ml-3 md:ml-6 space-y-8" id="history-container">
+                        <!-- Logs injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW: SETTINGS ================= -->
+            <div id="view-settings" class="space-y-6 hidden fade-in max-w-3xl mx-auto">
+                <div class="glass dark:bg-darkCard p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
+                    <div class="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center text-primary-500 text-3xl mx-auto mb-4">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">ডেটা ম্যানেজমেন্ট</h2>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-8">আপনার কাজের ডেটা সুরক্ষিত রাখতে ব্যাকআপ নিন অথবা পুরনো ডেটা রিস্টোর করুন।</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button onclick="exportData()" class="p-4 rounded-2xl border-2 border-dashed border-primary-300 bg-primary-50 hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-900/20 dark:hover:bg-primary-900/40 transition-all flex flex-col items-center justify-center gap-3 text-primary-700 dark:text-primary-300 font-bold group">
+                            <i class="fas fa-file-export text-3xl group-hover:-translate-y-1 transition-transform"></i>
+                            <span>ব্যাকআপ ডাউনলোড করুন (Export)</span>
+                        </button>
+                        
+                        <label class="p-4 rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 transition-all flex flex-col items-center justify-center gap-3 text-indigo-700 dark:text-indigo-300 font-bold cursor-pointer group">
+                            <i class="fas fa-file-import text-3xl group-hover:-translate-y-1 transition-transform"></i>
+                            <span>ডেটা রিস্টোর করুন (Import)</span>
+                            <input type="file" accept=".json" class="hidden" onchange="importData(event)">
+                        </label>
+                    </div>
+                    
+                    <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+                        <h3 class="text-lg font-bold text-red-600 mb-2">ডেঞ্জার জোন</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">নিচের বাটনে ক্লিক করলে সমস্ত ডেটা মুছে গিয়ে রুটিন অনুযায়ী নতুন করে শুরু হবে।</p>
+                        <button onclick="resetSystem()" class="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 rounded-xl font-bold transition-all shadow-sm">
+                            <i class="fas fa-trash-alt mr-2"></i> সমস্ত ডেটা ফ্যাক্টরি রিসেট করুন
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+<script>
+    // --- মাদ্রাসার রুটিন (PDF থেকে এক্সট্রাক্ট করা ডেটা সহ) ---
+    const defaultCurriculum = [
+        { class: "প্লে", subjects: ["আরবি", "গণিত", "ইংরেজি", "বাংলা", "ইংরেজি মৌখিক", "আরবি মৌখিক"] },
+        { class: "নার্সারি", subjects: ["আরবি", "গণিত", "ইংরেজি", "বাংলা", "ইংরেজি মৌখিক", "আরবি মৌখিক"] },
+        { class: "১ম শ্রেণি", subjects: ["কুরআন", "গণিত", "ইংরেজি", "বাংলা", "আরবি", "আকাইদ", "কুরআন মৌখিক"] },
+        { class: "২য় শ্রেণি", subjects: ["কুরআন", "গণিত", "ইংরেজি", "বাংলা", "আরবি", "আকাইদ"] },
+        { class: "৩য় শ্রেণি", subjects: ["কুরআন", "গণিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "ইংরেজি ২য়", "আকাইদ", "কুরআন মৌখিক", "বাংলাদেশ ও বিশ্বপরিচয়", "বিজ্ঞান"] },
+        { class: "৪র্থ শ্রেণি", subjects: ["কুরআন", "গণিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "ইংরেজি ২য়", "আকাইদ", "বাংলাদেশ ও বিশ্বপরিচয়", "বিজ্ঞান"] },
+        { class: "৫ম শ্রেণি", subjects: ["কুরআন", "গণিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "ইংরেজি ২য়", "আকাইদ", "বাংলাদেশ ও বিশ্বপরিচয়", "বিজ্ঞান"] },
+        { class: "৬ষ্ঠ শ্রেণি", subjects: ["কুরআন", "গনিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "আকাইদ", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "কৃষি শিক্ষা", "ইংরেজি ২য়", "আইসিটি"] },
+        { class: "৭ম শ্রেণি", subjects: ["কুরআন", "গনিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "আকাইদ", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "কৃষি শিক্ষা", "ইংরেজি ২য়", "আইসিটি"] },
+        { class: "৮ম শ্রেণি", subjects: ["কুরআন", "গনিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "আকাইদ", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "কৃষি শিক্ষা", "ইংরেজি ২য়", "আইসিটি"] },
+        { class: "৯ম শ্রেণি", subjects: ["কুরআন", "গনিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "আকাইদ", "হাদিস শরিফ", "ইসলামের ইতিহাস", "মানতিক", "ইংরেজি ২য়", "আইসিটি"] },
+        { class: "১০ম শ্রেণি", subjects: ["কুরআন", "গনিত", "আরবি ১ম", "বাংলা ১ম", "আরবি ২য়", "বাংলা ২য়", "ইংরেজি ১ম", "আকাইদ", "হাদিস শরিফ", "ইসলামের ইতিহাস", "মানতিক", "ইংরেজি ২য়", "আইসিটি"] }
+    ];
+
+    // State Variables
+    let appData = [];
+    let activityLog = [];
+    let currentFilterStatus = 'all';
+    let searchQuery = '';
+    let charts = {};
+
+    // Initialization
+    function init() {
+        initTheme();
+        setDate();
+        loadData();
+        populateClassFilter();
+        renderAll();
+    }
+
+    // --- Data Management ---
+    function loadData() {
+        const stored = localStorage.getItem('madrasaTrackerProData');
+        const storedLog = localStorage.getItem('madrasaTrackerProLog');
+        
+        if (stored) {
+            appData = JSON.parse(stored);
+            activityLog = storedLog ? JSON.parse(storedLog) : [];
+        } else {
+            generateInitialData();
+            addLog('সিস্টেম ইনিশিয়ালাইজ করা হয়েছে', 'system');
+        }
+    }
+
+    function generateInitialData() {
+        appData = [];
+        let id = 1;
+        defaultCurriculum.forEach(cls => {
+            cls.subjects.forEach(sub => {
+                appData.push({
+                    id: id++,
+                    className: cls.class,
+                    subject: sub,
+                    status: 'pending',
+                    typedAt: null,
+                    printedAt: null
+                });
+            });
+        });
+        saveData();
+    }
+
+    function saveData() {
+        localStorage.setItem('madrasaTrackerProData', JSON.stringify(appData));
+        localStorage.setItem('madrasaTrackerProLog', JSON.stringify(activityLog.slice(0, 50))); // Keep last 50 logs
+    }
+
+    function addLog(message, type = 'info', subjectName = '') {
+        const time = new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
+        const date = new Date().toISOString().split('T')[0];
+        activityLog.unshift({ id: Date.now(), message, type, time, date, subjectName });
+        saveData();
+        if(document.getElementById('view-history').classList.contains('block')){
+            renderHistory();
+        }
+    }
+
+    // --- Render Engine ---
+    function renderAll() {
+        renderDashboard();
+        renderTasks();
+        renderHistory();
+    }
+
+    function renderDashboard() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        let stats = { total: appData.length, pending: 0, typedTotal: 0, printedTotal: 0, todayTyped: 0, todayPrinted: 0 };
+        let classData = {};
+
+        defaultCurriculum.forEach(c => classData[c.class] = { total: 0, printed: 0, typed: 0 });
+
+        appData.forEach(item => {
+            if (item.status === 'pending') stats.pending++;
+            if (item.status === 'typed') stats.typedTotal++;
+            if (item.status === 'printed') stats.printedTotal++;
+            
+            if (item.typedAt === todayStr && item.status !== 'pending') stats.todayTyped++;
+            if (item.printedAt === todayStr && item.status === 'printed') stats.todayPrinted++;
+
+            if(classData[item.className]) {
+                classData[item.className].total++;
+                if(item.status === 'printed') classData[item.className].printed++;
+                if(item.status === 'typed') classData[item.className].typed++;
+            }
+        });
+
+        // Update DOM metrics (6 Cards)
+        document.getElementById('stat-total').innerText = enToBn(stats.total);
+        document.getElementById('stat-pending').innerText = enToBn(stats.pending);
+        document.getElementById('stat-total-typed').innerText = enToBn(stats.typedTotal);
+        document.getElementById('stat-total-printed').innerText = enToBn(stats.printedTotal);
+        document.getElementById('stat-today-typed').innerText = enToBn(stats.todayTyped);
+        document.getElementById('stat-today-printed').innerText = enToBn(stats.todayPrinted);
+        
+        let overallPercent = stats.total === 0 ? 0 : Math.round((stats.printedTotal / stats.total) * 100);
+        document.getElementById('banner-percentage').innerText = enToBn(overallPercent) + '%';
+
+        // Confetti check
+        if(overallPercent === 100 && stats.total > 0 && !window.confettiFired) {
+            triggerConfetti();
+            window.confettiFired = true;
+        } else if (overallPercent < 100) {
+            window.confettiFired = false;
+        }
+
+        // Draw Charts
+        drawCharts(stats, classData);
+    }
+
+    function populateClassFilter() {
+        const sel = document.getElementById('classFilter');
+        defaultCurriculum.forEach(c => {
+            sel.insertAdjacentHTML('beforeend', `<option value="${c.class}">${c.class}</option>`);
+        });
+    }
+
+    function renderTasks() {
+        const container = document.getElementById('tasks-container');
+        container.innerHTML = '';
+        
+        const selectedClass = document.getElementById('classFilter').value;
+        const q = searchQuery.toLowerCase();
+
+        defaultCurriculum.forEach(cls => {
+            if(selectedClass !== 'all' && cls.class !== selectedClass) return;
+
+            let items = appData.filter(i => i.className === cls.class);
+            
+            // Apply Status Filter
+            if (currentFilterStatus !== 'all') {
+                items = items.filter(i => i.status === currentFilterStatus);
+            }
+            
+            // Apply Search Filter
+            if (q) {
+                items = items.filter(i => i.subject.toLowerCase().includes(q) || i.className.toLowerCase().includes(q));
+            }
+
+            if (items.length === 0) return;
+
+            let html = `
+                <div class="glass dark:bg-darkCard rounded-2xl shadow-sm border border-gray-100 overflow-hidden fade-in">
+                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <span class="w-2 h-6 bg-primary-500 rounded-full"></span>
+                            ${cls.class}
+                        </h3>
+                        <span class="text-xs font-bold px-3 py-1 bg-white dark:bg-gray-700 rounded-full shadow-sm text-gray-500 dark:text-gray-300">
+                            ${enToBn(items.length)} টি বিষয়
+                        </span>
+                    </div>
+                    <div class="divide-y divide-gray-100 dark:divide-gray-800">
+            `;
+
+            items.forEach(item => {
+                let badge = '', actionBtn = '', reverseBtn = '';
+
+                if (item.status === 'pending') {
+                    badge = `<span class="badge-pending px-3 py-1 rounded-full text-xs font-bold tracking-wide"><i class="fas fa-clock mr-1"></i>বাকি</span>`;
+                    actionBtn = `<button onclick="updateTask(${item.id}, 'typed')" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white dark:bg-indigo-900/30 dark:hover:bg-indigo-600 dark:text-indigo-400 dark:hover:text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"><i class="fas fa-keyboard"></i> টাইপ সম্পন্ন</button>`;
+                } else if (item.status === 'typed') {
+                    badge = `<span class="badge-typed px-3 py-1 rounded-full text-xs font-bold tracking-wide"><i class="fas fa-check mr-1"></i>টাইপড</span>`;
+                    actionBtn = `<button onclick="updateTask(${item.id}, 'printed')" class="px-4 py-2 bg-green-50 hover:bg-green-600 text-green-600 hover:text-white dark:bg-green-900/30 dark:hover:bg-green-600 dark:text-green-400 dark:hover:text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"><i class="fas fa-print"></i> প্রিন্ট সম্পন্ন</button>`;
+                    reverseBtn = `<button onclick="updateTask(${item.id}, 'pending')" class="w-9 h-9 flex justify-center items-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30 transition-all mr-2 tooltip" title="পূর্বের অবস্থায় ফেরত"><i class="fas fa-undo"></i></button>`;
+                } else {
+                    badge = `<span class="badge-printed px-3 py-1 rounded-full text-xs font-bold tracking-wide"><i class="fas fa-check-double mr-1"></i>প্রিন্টেড</span>`;
+                    reverseBtn = `<button onclick="updateTask(${item.id}, 'typed')" class="w-9 h-9 flex justify-center items-center rounded-full text-gray-400 hover:bg-orange-50 hover:text-orange-500 dark:hover:bg-orange-900/30 transition-all tooltip" title="পূর্বের অবস্থায় ফেরত"><i class="fas fa-undo"></i></button>`;
+                }
+
+                html += `
+                    <div class="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full md:w-auto">
+                            <h4 class="font-bold text-gray-800 dark:text-gray-200 text-lg">${item.subject}</h4>
+                            <div class="w-max">${badge}</div>
+                        </div>
+                        <div class="flex items-center justify-end w-full md:w-auto mt-2 md:mt-0">
+                            ${reverseBtn}
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        if(container.innerHTML === '') {
+            container.innerHTML = `
+                <div class="text-center py-16 text-gray-400 dark:text-gray-600">
+                    <i class="fas fa-folder-open text-6xl mb-4 opacity-50"></i>
+                    <p class="text-lg font-bold">কোনো ডেটা পাওয়া যায়নি</p>
+                </div>`;
+        }
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('history-container');
+        container.innerHTML = '';
+        
+        if(activityLog.length === 0) {
+            container.innerHTML = `<p class="text-gray-400 text-center py-10">কোনো হিস্ট্রি নেই</p>`;
+            return;
+        }
+
+        activityLog.forEach(log => {
+            let icon = 'fa-info-circle', color = 'bg-gray-200 text-gray-500';
+            if(log.type === 'typed') { icon = 'fa-keyboard'; color = 'bg-indigo-100 text-indigo-600 border-indigo-200'; }
+            if(log.type === 'printed') { icon = 'fa-print'; color = 'bg-green-100 text-green-600 border-green-200'; }
+            if(log.type === 'reverted') { icon = 'fa-undo'; color = 'bg-orange-100 text-orange-600 border-orange-200'; }
+
+            const bnDate = new Date(log.date).toLocaleDateString('bn-BD', {day:'numeric', month:'short'});
+
+            container.insertAdjacentHTML('beforeend', `
+                <div class="relative pl-6 sm:pl-8 py-2">
+                    <div class="absolute -left-[17px] top-3 w-8 h-8 rounded-full border-2 ${color} flex items-center justify-center bg-white shadow-sm">
+                        <i class="fas ${icon} text-xs"></i>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <p class="text-gray-800 dark:text-gray-200 font-semibold text-sm sm:text-base">${log.message}</p>
+                        <span class="text-xs text-gray-400 mt-1 block font-bold tracking-wider uppercase"><i class="far fa-clock mr-1"></i>${bnDate}, ${enToBn(log.time)}</span>
+                    </div>
+                </div>
+            `);
+        });
+    }
+
+    // --- User Actions ---
+    window.updateTask = function(id, newStatus) {
+        const item = appData.find(i => i.id === id);
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        if (!item) return;
+
+        let logMsg = '', logType = '';
+        
+        if (newStatus === 'typed') {
+            if(item.status === 'printed') {
+                logMsg = `${item.className} এর "${item.subject}" প্রিন্টেড থেকে টাইপড অবস্থায় ফেরত নেওয়া হয়েছে।`;
+                logType = 'reverted';
+            } else {
+                if(!item.typedAt) item.typedAt = todayStr;
+                logMsg = `${item.className} এর "${item.subject}" টাইপ সম্পন্ন হয়েছে।`;
+                logType = 'typed';
+            }
+            item.printedAt = null;
+        } 
+        else if (newStatus === 'printed') {
+            if(!item.typedAt) item.typedAt = todayStr;
+            item.printedAt = todayStr;
+            logMsg = `${item.className} এর "${item.subject}" সফলভাবে প্রিন্ট হয়েছে! 🎉`;
+            logType = 'printed';
+        } 
+        else if (newStatus === 'pending') {
+            item.typedAt = null;
+            item.printedAt = null;
+            logMsg = `${item.className} এর "${item.subject}" পেন্ডিং অবস্থায় ফেরত নেওয়া হয়েছে।`;
+            logType = 'reverted';
+        }
+
+        item.status = newStatus;
+        
+        addLog(logMsg, logType, item.subject);
+        renderAll();
+        
+        // Premium Toast
+        const toastColor = logType === 'printed' ? '#10b981' : (logType === 'typed' ? '#6366f1' : '#f59e0b');
+        Swal.fire({
+            toast: true, position: 'bottom-end', showConfirmButton: false, timer: 2000,
+            icon: logType === 'reverted' ? 'warning' : 'success',
+            title: logMsg,
+            iconColor: toastColor,
+            customClass: { popup: 'rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 dark:bg-darkCard dark:text-white' }
+        });
+    }
+
+    window.filterTasks = function(status) {
+        currentFilterStatus = status;
+        const btns = ['all', 'pending', 'typed', 'printed'];
+        btns.forEach(b => {
+            const btn = document.getElementById(`btn-filter-${b}`);
+            if(b === status) {
+                btn.className = "px-5 py-2 rounded-full text-sm font-bold transition-all bg-primary-500 text-white shadow-md whitespace-nowrap";
+            } else {
+                btn.className = "px-5 py-2 rounded-full text-sm font-bold transition-all bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 whitespace-nowrap";
+            }
+        });
+        renderTasks();
+    }
+
+    window.handleGlobalSearch = function(val) {
+        searchQuery = val;
+        // Auto switch to tasks tab if searching
+        if(document.getElementById('view-tasks').classList.contains('hidden') && val.trim() !== '') {
+            switchTab('tasks');
+        }
+        renderTasks();
+    }
+
+    // --- Chart.js Logic ---
+    function drawCharts(stats, classData) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#475569';
+        const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+        // 1. Donut Chart (Overall)
+        const ctxDonut = document.getElementById('statusChart');
+        if(charts.donut) charts.donut.destroy();
+        charts.donut = new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+                labels: ['বাকি আছে', 'টাইপড', 'প্রিন্টেড'],
+                datasets: [{
+                    data: [stats.pending, stats.typedTotal, stats.printedTotal],
+                    backgroundColor: ['#ef4444', '#6366f1', '#10b981'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Hind Siliguri', weight: 'bold' } } }
+                }
+            }
+        });
+
+        // 2. Bar Chart (Class Wise)
+        const labels = Object.keys(classData);
+        const printedData = labels.map(l => classData[l].printed);
+        const typedData = labels.map(l => classData[l].typed);
+        const pendingData = labels.map(l => classData[l].total - classData[l].printed - classData[l].typed);
+
+        const ctxBar = document.getElementById('classChart');
+        if(charts.bar) charts.bar.destroy();
+        charts.bar = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'প্রিন্টেড', data: printedData, backgroundColor: '#10b981', borderRadius: 4 },
+                    { label: 'টাইপড', data: typedData, backgroundColor: '#6366f1', borderRadius: 4 },
+                    { label: 'বাকি', data: pendingData, backgroundColor: '#ef4444', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { color: textColor, font: { family: 'Hind Siliguri' } } },
+                    y: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor, stepSize: 2 } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { color: textColor, font: { family: 'Hind Siliguri' } } }
+                }
+            }
+        });
+    }
+
+    // --- Settings & Utils ---
+    window.exportData = function() {
+        const dataStr = JSON.stringify({ appData, activityLog });
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const exportFileDefaultName = `Madrasa_Tracker_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        Swal.fire('সফল!', 'আপনার ডেটা সফলভাবে ডাউনলোড হয়েছে।', 'success');
+    }
+
+    window.importData = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if(parsed.appData) {
+                    appData = parsed.appData;
+                    activityLog = parsed.activityLog || [];
+                    saveData();
+                    renderAll();
+                    Swal.fire('সফল!', 'ডেটা সফলভাবে রিস্টোর করা হয়েছে।', 'success');
+                    switchTab('dashboard');
+                } else {
+                    throw new Error("Invalid Format");
+                }
+            } catch (err) {
+                Swal.fire('ত্রুটি!', 'সঠিক ব্যাকআপ ফাইল নির্বাচন করুন।', 'error');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    window.resetSystem = function() {
+        Swal.fire({
+            title: 'আপনি কি নিশ্চিত?',
+            text: "সমস্ত ডেটা মুছে যাবে এবং রুটিন অনুযায়ী নতুন করে শুরু হবে! এটি ফিরিয়ে আনা সম্ভব নয়।",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'হ্যাঁ, মুছে ফেলুন',
+            cancelButtonText: 'বাতিল'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                generateInitialData();
+                activityLog = [];
+                addLog('সিস্টেম ফ্যাক্টরি রিসেট করা হয়েছে', 'system');
+                renderAll();
+                Swal.fire('রিসেট সম্পন্ন!', 'সিস্টেম নতুনের মতো প্রস্তুত।', 'success');
+                switchTab('dashboard');
+            }
+        });
+    }
+
+    window.switchTab = function(tabId) {
+        // Hide all views
+        ['dashboard', 'tasks', 'history', 'settings'].forEach(id => {
+            document.getElementById(`view-${id}`).classList.remove('block');
+            document.getElementById(`view-${id}`).classList.add('hidden');
+            
+            // Reset Nav styling
+            const nav = document.getElementById(`nav-${id}`);
+            if(nav) {
+                nav.className = "w-full flex items-center space-x-3 p-3.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 font-semibold transition-all";
+            }
+        });
+
+        // Show target
+        document.getElementById(`view-${tabId}`).classList.remove('hidden');
+        document.getElementById(`view-${tabId}`).classList.add('block');
+        
+        // Active Nav styling
+        const activeNav = document.getElementById(`nav-${tabId}`);
+        if(activeNav) {
+            activeNav.className = "w-full flex items-center space-x-3 p-3.5 rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400 font-semibold transition-all shadow-sm";
+        }
+        
+        // Scroll to top
+        document.getElementById('main-scroll-area').scrollTop = 0;
+        
+        // Trigger chart resize fix if going to dashboard
+        if(tabId === 'dashboard') renderDashboard();
+    }
+
+    window.toggleTheme = function() {
+        const html = document.documentElement;
+        if(html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        }
+        renderDashboard(); // Re-render charts for color update
+    }
+
+    function initTheme() {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }
+
+    function setDate() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('bn-BD', options);
+    }
+
+    function enToBn(num) {
+        return num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+    }
+
+    function triggerConfetti() {
+        var duration = 3000;
+        var end = Date.now() + duration;
+
+        (function frame() {
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#14b8a6', '#3b82f6', '#f59e0b'] });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#14b8a6', '#3b82f6', '#f59e0b'] });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        }());
+    }
+
+    // Run
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+  </html>
