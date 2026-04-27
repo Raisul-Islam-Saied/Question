@@ -428,7 +428,7 @@
         // Update DOM metrics (6 Cards)
         document.getElementById('stat-total').innerText = enToBn(stats.total);
         document.getElementById('stat-pending').innerText = enToBn(stats.pending);
-        document.getElementById('stat-total-typed').innerText = enToBn(stats.typedTotal);
+        document.getElementById('stat-total-typed').innerText = enToBn(stats.typedTotal + stats.printedTotal);
         document.getElementById('stat-total-printed').innerText = enToBn(stats.printedTotal);
         document.getElementById('stat-today-typed').innerText = enToBn(stats.todayTyped);
         document.getElementById('stat-today-printed').innerText = enToBn(stats.todayPrinted);
